@@ -27,51 +27,50 @@ let mimeTypes = {
   "xml": "text/xml"
 };
 
-// 创建代理服务器
 let proxy = httpProxy.createProxyServer({})
 
-// 创建 http 服务器
 let server = http.createServer(function(req, res) {
 
   let hostname = url.parse(req.url).hostname,
       pathname = url.parse(req.url).pathname,
-      localPath = `.dist${pathname}`;
+      localPath = `./dist${pathname}`;
 
   let serverPromise = new Promise((resolve,reject)=>{
+
     if (hostname === 'api.douban.com'){
       resolve();
     }else {
       reject();
     }
+
   }).then(() => {
-    fs.stat(localPath, (err, stats)=>{
-      if(!err){
-        return stats;
-      }else {
-        throw err;
-      }
-    });
+
+    return fs.statSync(localPath)
+
   }).catch((err) => {
+
     proxy.web(req, res, { target: req.url });
+
   }).then((stats)=>{
-    fs.stat(localPath, function(err, file){
-    if(err) throw err;
-    return file;
-    });
+
+    return fs.readFileSync(localPath)
+
   }).then((file)=>{
+
     let ext = path.extname(localPath);
     ext = ext ? ext.slice(1) : 'unknown';
     let contentType = mimeTypes[ext] || "text/plain";
     res.writeHead(200, {'Content-Type': contentType});
-    res.write(file);
-    res.end();
+    res.end(file);
+
     }
   ).catch((err)=>{
-    res.writeHead(500, {'Content-Type': 'text/plain'});
-    res.end(err);
+
+    console.error(err);
+
   });
-  
+
 }).listen(3399, function(err){
     if(err) throw err;
     console.log("在端口 3399 监听浏览器请求");
-}
+})
