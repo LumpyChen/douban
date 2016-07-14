@@ -46,9 +46,9 @@ let server = http.createServer(function(req, res) {
   }).then(() => {
     fs.stat(localPath, (err, stats)=>{
       if(!err){
-        resolve(stats);
+        return stats;
       }else {
-        reject();
+        throw err;
       }
     });
   }).catch((err) => {
@@ -70,7 +70,7 @@ let server = http.createServer(function(req, res) {
     res.writeHead(500, {'Content-Type': 'text/plain'});
     res.end(err);
   });
-
+  
 }).listen(3399, function(err){
     if(err) throw err;
     console.log("在端口 3399 监听浏览器请求");
