@@ -62,10 +62,6 @@ let server = http.createServer(function(req, res) {
       console.log('access assets');
     }
 
-  }).catch((err) => {
-
-    console.error(err);
-
   }).then(()=>{
 
     return fs.readFileSync(localPath)
