@@ -3,6 +3,7 @@
 let http = require('http'),
     path = require('path'),
     url = require('url'),
+    querystring = require('querystring'),
     fs = require('fs'),
     httpProxy = require('http-proxy')
 
@@ -33,9 +34,12 @@ let server = http.createServer(function(req, res) {
 
   let hostname = url.parse(req.url).hostname,
       pathname = url.parse(req.url).pathname,
-      localPath = `./dist${pathname}`;
+      localPath = `./dist${pathname}`,
+      query = querystring.parse(url.parse(req.url).query).name;
 
   let serverPromise = new Promise((resolve,reject)=>{
+
+    console.log('访问了:'+req.url);
 
     if (hostname === 'api.douban.com'){
       resolve();
@@ -43,15 +47,26 @@ let server = http.createServer(function(req, res) {
       reject();
     }
 
+  }).catch(() => {
+
+    proxy.web(req,res,{target:req.url})
+
   }).then(() => {
 
-    return fs.statSync(localPath)
+    if(query){
+      console.log('search books');
+      proxy.web(req,res,{target:'http://api.douban.com/v2/book/search?count=5&q='+ query},(e)=>{
+        if(e) throw e;
+      });
+    }else {
+      console.log('access assets');
+    }
 
   }).catch((err) => {
 
-    proxy.web(req, res, { target: req.url });
+    console.error(err);
 
-  }).then((stats)=>{
+  }).then(()=>{
 
     return fs.readFileSync(localPath)
 
