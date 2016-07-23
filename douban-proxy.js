@@ -39,32 +39,31 @@ http.createServer((req, res) => {
   new Promise((resolve, reject) => {
     console.log('访问了:', req.url);
 
-    if (hostname === 'api.douban.com' && !query) {
-      console.log('access assets');
-      resolve();
-    } else if (hostname === 'api.douban.com') {
+    if (hostname === 'api.douban.com' && query) {
       console.log('search books');
       proxy.web(req, res, { target: `http://api.douban.com/v2/book/search?count=5&q=${query}` }, (e) => {
         if (e) reject(e);
       });
     } else {
-      console.log('proxy request');
-      proxy.web(req, res, { target: req.url }, (e) => {
-        if (e) reject(e);
-      })
+      resolve()
     }
-  }).then(() => fs.readFileSync(localPath)
-  ).then((file) => {
+  }).then(
+    () => fs.statSync(localPath)
+  ).catch(() => {
+    proxy.web(req, res, { target: req.url }, () => {
+    })
+  })
+  .then(() => fs.readFileSync(localPath))
+  .then((file) => {
     let ext = path.extname(localPath);
     ext = ext ? ext.slice(1) : 'unknown';
     const contentType = mimeTypes[ext] || 'text/plain';
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(file);
-  }
-  )
+  })
   .catch((err) => {
     console.error(err);
-  });
+  })
 }).listen(3399, (err) => {
   if (err) throw err;
   console.log('在端口 3399 监听浏览器请求');
